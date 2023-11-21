@@ -9,32 +9,27 @@ import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { Button } from "./button";
 import { useFormState, useFormStatus } from "react-dom";
 import { authenticate } from "@/app/lib/actions";
-import { useCallback, useRef } from "react";
+import { FormEvent, useCallback, useRef } from "react";
 
 export default function RegisterForm() {
   const [state, dispatch] = useFormState(authenticate, undefined);
   const formRef = useRef(null);
-  
-  const onSubmit = useCallback(
-    async (e: {
-      preventDefault: () => void;
-      target: HTMLFormElement | undefined;
-    }) => {
-      e.preventDefault();
-      const form = formRef.current;
-      if(!form) return false;
-      const formData = new FormData(form); 
-      console.log('BYTTON')
 
-      formData.append("action", "register");
-      console.log(formData, 'login form')
-      await dispatch(formData);
-    },
-    [dispatch]
-  );
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const response = await fetch(`/api/auth/register`, {
+      method: "POST",
+      body: JSON.stringify({
+        email: formData.get("email"),
+        password: formData.get("password"),
+      }),
+    });
+    console.log({ response });
+  };
 
   return (
-    <form ref={formRef} action={dispatch} className="space-y-3">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-3">
       <div className="flex-1 rounded-lg bg-gray-50 px-6 pb-4 pt-8">
         <h1 className={`${lusitana.className} mb-3 text-2xl`}>
           Please Sign in to continue.
@@ -101,7 +96,7 @@ export default function RegisterForm() {
             </div>
           </div>
         </div>
-        <LoginButton onSubmit={onSubmit} />
+        {/* <LoginButton onSubmit={onSubmit} /> */}
         <div
           className="flex h-8 items-end space-x-1"
           aria-live="polite"

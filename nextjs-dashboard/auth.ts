@@ -1,4 +1,4 @@
-''
+("");
 
 import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
@@ -7,9 +7,6 @@ import { z } from "zod";
 import type { User } from "@/app/lib/definitions";
 import bcrypt from "bcrypt";
 import { sql } from "@vercel/postgres";
-import GoogleProvider from "next-auth/providers/google";
-
-
 
 export async function getUser(email: string): Promise<User | undefined> {
   try {
@@ -22,10 +19,10 @@ export async function getUser(email: string): Promise<User | undefined> {
 }
 
 export async function createUser(
+  name: string,
   email: string,
-  password: string,
-  name: string
-): Promise<User | undefined> {
+  password: string
+): Promise<User | any> {
   const salt = bcrypt.genSaltSync();
   const hashedPassword = bcrypt.hashSync(password, salt);
 
@@ -42,7 +39,6 @@ export async function createUser(
     };
     return newUser;
   } catch (error) {
-    console.error("Failed to create user:", error);
     throw new Error("Failed to create user.");
   }
 }
@@ -52,65 +48,35 @@ export const { auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       name: 'Credentials',
+      type:'credentials',
       async authorize(credentials) {
         const parsedCredentials = z
           .object({
-            action: z.string().optional(),
             email: z.string().email(),
             password: z.string().min(6),
-            name: z.string().optional(),
           })
           .safeParse(credentials);
         if (parsedCredentials.success) {
-          const { action, email, password, name } = parsedCredentials.data;
+          const { email, password } = parsedCredentials.data;
+          const user = await getUser(email);
+          if (!user) return null;
+          // const passwordsMatch = await bcrypt.compare(password, user.password);
 
-          if (action === "login") {
-
-            // Handle login logic
-            const user = await getUser(email);
-            if (!user) return null;
-            const passwordsMatch = await bcrypt.compare(
-              password,
-              user.password
-            );
-            if (passwordsMatch) return user;
-          } else if (action === "register" && name) {
-            // Handle registration logic
-            const existingUser = await getUser(email);
-            if (existingUser) return null;
-            const user = await createUser(email, password, name);
-            if (!user) return null;
-            return user;
-          } else {
-            // Invalid action
-            return null;
-          }
+          // if (passwordsMatch) return user;
         }
 
+        console.log('Invalid credentials');
         return null;
-      },
+      }
+      // }
+      ,
+      credentials: {}
     }),
-    // GoogleProvider({
-    //   clientId: process.env.GOOGLE_CLIENT_ID!,
-    //   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    //   allowDangerousEmailAccountLinking: true,
-    // }),
   ],
-  callbacks: {
-    // async signIn({ user, account }: {
-    //   user: User | any,
-    //   account: any
-    // }) {
-    //   console.log(account, 'account')
-    //   try {
-    //     const userExists = await getUser(user?.email as string) as { user?: User }
-    //     if (!userExists.user) {
-    //       await createUser(user?.name as string, user?.email as string, user?.password as string)
-    //     }
-    //     return true;
-    //   } catch (error: any) {
-    //     return false;
-    //   }
-    // },
-  }
+  pages: {
+    signIn: "/login",
+    // error: '/auth/error',
+    // signOut: '/auth/signout'
+  },
+
 });

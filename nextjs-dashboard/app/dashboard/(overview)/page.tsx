@@ -12,8 +12,8 @@ import {
 import { getCurrentUser } from "@/auth.config";
 
 export default async function Page() {
-    const session = await getCurrentUser()
-console.log(session?.user?.email, 'session KO')
+  const session = await getCurrentUser()
+  console.log(session, 'session')
   return (
     <main>
       <h1 className={`${lusitana.className} mb-4 text-xl md:text-2xl`}>
