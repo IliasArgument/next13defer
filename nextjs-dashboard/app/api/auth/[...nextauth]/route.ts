@@ -5,18 +5,21 @@
 
 // export { handlerAuth as GET, handlerAuth as POST };
 
-import NextAuth from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import GoogleProvider from 'next-auth/providers/google';
+import NextAuth, { PagesOptions, User } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 
-import { compare } from 'bcrypt';
-import { sql } from '@vercel/postgres';
-const handler = NextAuth({
+import { compare } from "bcrypt";
+import { sql } from "@vercel/postgres";
+
+
+
+export const handler = NextAuth({
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
   },
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
   providers: [
     CredentialsProvider({
@@ -24,14 +27,13 @@ const handler = NextAuth({
         email: {},
         password: {},
       },
-      async authorize(credentials, req) {
-
+      async authorize(credentials: any, req: any) {
         const response = await sql`
         SELECT * FROM users WHERE email=${credentials?.email}`;
         const user = response.rows[0];
 
         const passwordCorrect = await compare(
-          credentials?.password || '',
+          credentials?.password || "",
           user.password
         );
 
@@ -57,12 +59,16 @@ const handler = NextAuth({
         SELECT * FROM users WHERE email=${profile?.email}`;
         const user = response.rows[0];
       }
-      console.log('hello2')
-      return true // Do different verification for other providers that don't have `email_verified`
+      console.log("hello2");
+      return true; // Do different verification for other providers that don't have `email_verified`
     },
-  }
+    
+    async jwt({ token }) {
+      console.log(token, 'token')
+      return token
+    },
+  },
+  secret: process.env.AUTH_SECRET,
 });
 
 export { handler as GET, handler as POST };
-
-

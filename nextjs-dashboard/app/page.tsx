@@ -5,7 +5,7 @@ import Image from "next/image";
 
 import Link from "next/link";
 import { useSession, signIn } from "next-auth/react";
-import { getCurrentUser } from "@/auth.config";
+// import { getCurrentUser } from "@/auth.config";
 import { redirect } from "next/navigation";
 // import { GoggleButton } from "./ui/login-form";
 
